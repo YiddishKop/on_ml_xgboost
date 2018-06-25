@@ -1,0 +1,114 @@
+#+TITLE: 2.4 Using Scikit-learn Interface
+
+* Using Scikit-learn Interface
+The following notebook presents the alternative approach for using XGBoost algorithm.
+
+#+BEGIN_EXAMPLE
+**What's included**:
+- load libraries and prepare data,
+- specify parameters,
+- train classifier,
+- make predictions
+#+END_EXAMPLE
+
+*** Loading libraries
+Begin with loading all required libraries.
+
+
+#+BEGIN_SRC ipython :session :exports code :async t :results raw drawer
+import numpy as np
+
+from sklearn.datasets import load_svmlight_files
+from sklearn.metrics import accuracy_score
+
+from xgboost.sklearn import XGBClassifier
+#+END_SRC
+
+*** Loading data
+We are going to use the same dataset as in previous lecture. The scikit-learn
+package provides a convenient function `load_svmlight` capable of reading many
+libsvm files at once and storing them as Scipy's sparse matrices.
+
+
+#+BEGIN_SRC ipython :session :exports code :async t :results raw drawer
+  X_train, y_train, X_test, y_test =
+  load_svmlight_files(('../data/agaricus.txt.train',
+                       '../data/agaricus.txt.test'))
+#+END_SRC
+
+Examine what was loaded
+
+#+BEGIN_SRC ipython :session :exports code :async t :results raw drawer
+print("Train dataset contains {0} rows and {1} columns".format(X_train.shape[0], X_train.shape[1]))
+print("Test dataset contains {0} rows and {1} columns".format(X_test.shape[0], X_test.shape[1]))
+#+END_SRC
+
+    Train dataset contains 6513 rows and 126 columns
+    Test dataset contains 1611 rows and 126 columns
+
+
+
+#+BEGIN_SRC ipython :session :exports code :async t :results raw drawer
+print("Train possible labels: ")
+print(np.unique(y_train))
+
+print("\nTest possible labels: ")
+print(np.unique(y_test))
+#+END_SRC
+
+    Train possible labels:
+    [ 0.  1.]
+
+    Test possible labels:
+    [ 0.  1.]
+
+
+*** Specify training parameters
+All the parameters are set like in the previous example
+- we are dealing with binary classification problem (`'objective':'binary:logistic'`),
+- we want shallow single trees with no more than 2 levels (`'max_depth':2`),
+- we don't any oupout (`'silent':1`),
+- we want algorithm to learn fast and aggressively (`'learning_rate':1`), (in naive named `eta`)
+- we want to iterate only 5 rounds (`n_estimators`)
+
+
+#+BEGIN_SRC ipython :session :exports code :async t :results raw drawer
+params = {
+    'objective': 'binary:logistic',
+    'max_depth': 2,
+    'learning_rate': 1.0,
+    'silent': 1.0,
+    'n_estimators': 5
+}
+#+END_SRC
+
+*** Training classifier
+#+BEGIN_SRC ipython :session :exports code :async t :results raw drawer
+bst = XGBClassifier(**params).fit(X_train, y_train)
+#+END_SRC
+
+*** Make predictions
+#+BEGIN_SRC ipython :session :exports code :async t :results raw drawer
+preds = bst.predict(X_test)
+preds
+#+END_SRC
+
+    array([ 0.,  1.,  0., ...,  1.,  0.,  1.])
+
+Calculate obtained error
+
+#+BEGIN_SRC ipython :session :exports code :async t :results raw drawer
+correct = 0
+
+for i in range(len(preds)):
+    if (y_test[i] == preds[i]):
+        correct += 1
+
+acc = accuracy_score(y_test, preds)
+
+print('Predicted correctly: {0}/{1}'.format(correct, len(preds)))
+print('Error: {0:.4f}'.format(1-acc))
+#+END_SRC
+
+    Predicted correctly: 1601/1611
+    Error: 0.0062
